@@ -252,3 +252,44 @@ Oceania_LDC <- ggplot(subset(ldc_continent_growth, Continent == "Oceania"), aes(
     plot.title = element_text(hjust = 0.5)
   )
 
+
+# Box Plot to Show Distribution
+
+
+
+# Common y-limits across the three continents (ignoring NAs)
+ylim_range <- ldc_continent_growth %>%
+  filter(Continent %in% c("Africa", "Asia", "Oceania")) %>%
+  pull(weighted_growth_ldc) %>%
+  range(na.rm = TRUE)
+
+Africa_box <- ggplot(subset(ldc_continent_growth, Continent == "Africa" & !is.na(weighted_growth_ldc)),
+                     aes(x = "Africa", y = weighted_growth_ldc)) +
+  geom_boxplot(fill = "#1f77b4") +
+  coord_cartesian(ylim = ylim_range) +
+  labs(title = "Africa", x = NULL, y = "Growth Rate (%)") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+Asia_box <- ggplot(subset(ldc_continent_growth, Continent == "Asia" & !is.na(weighted_growth_ldc)),
+                   aes(x = "Asia", y = weighted_growth_ldc)) +
+  geom_boxplot(fill = "#1f77b4") +
+  coord_cartesian(ylim = ylim_range) +
+  labs(title = "Asia", x = NULL, y = NULL) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+Oceania_box <- ggplot(subset(ldc_continent_growth, Continent == "Oceania" & !is.na(weighted_growth_ldc)),
+                      aes(x = "Oceania", y = weighted_growth_ldc)) +
+  geom_boxplot(fill = "#1f77b4") +
+  coord_cartesian(ylim = ylim_range) +
+  labs(title = "Oceania", x = NULL, y = NULL) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Combine into one row with a shared title
+LDC_Distribution_Combined <- (Africa_box | Asia_box | Oceania_box) +
+  plot_annotation(
+    title = "Distribution of Weighted LDC GDP per Capita Growth",
+    theme = theme(plot.title = element_text(hjust = 0.5))
+  )
