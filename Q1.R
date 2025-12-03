@@ -255,14 +255,13 @@ Oceania_LDC <- ggplot(subset(ldc_continent_growth, Continent == "Oceania"), aes(
 
 # Box Plot to Show Distribution
 
-
-
 # Common y-limits across the three continents (ignoring NAs)
 ylim_range <- ldc_continent_growth %>%
   filter(Continent %in% c("Africa", "Asia", "Oceania")) %>%
   pull(weighted_growth_ldc) %>%
   range(na.rm = TRUE)
 
+# Africa
 Africa_box <- ggplot(subset(ldc_continent_growth, Continent == "Africa" & !is.na(weighted_growth_ldc)),
                      aes(x = "Africa", y = weighted_growth_ldc)) +
   geom_boxplot(fill = "#1f77b4") +
@@ -271,6 +270,7 @@ Africa_box <- ggplot(subset(ldc_continent_growth, Continent == "Africa" & !is.na
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5))
 
+# Asia
 Asia_box <- ggplot(subset(ldc_continent_growth, Continent == "Asia" & !is.na(weighted_growth_ldc)),
                    aes(x = "Asia", y = weighted_growth_ldc)) +
   geom_boxplot(fill = "#1f77b4") +
@@ -279,6 +279,7 @@ Asia_box <- ggplot(subset(ldc_continent_growth, Continent == "Asia" & !is.na(wei
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5))
 
+# Oceania
 Oceania_box <- ggplot(subset(ldc_continent_growth, Continent == "Oceania" & !is.na(weighted_growth_ldc)),
                       aes(x = "Oceania", y = weighted_growth_ldc)) +
   geom_boxplot(fill = "#1f77b4") +
