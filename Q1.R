@@ -100,46 +100,59 @@ na_counts <- GDP_Continent_Population_Combined %>%
 
 # Plotting the graph for Continents
 
+
 # Africa
 Africa_growth <- ggplot(subset(continent_growth, Continent == "Africa"), aes(x = Year)) +
   geom_line(aes(y = weighted_growth, color = "Weighted")) +
+  geom_point(aes(y = weighted_growth, color = "Weighted"), size = 0.75) +
   geom_line(aes(y = average_growth, color = "Average")) +
-  labs(title = "Oceania", y = "Growth Rate (%)", x=NULL) +
+  geom_point(aes(y = average_growth, color = "Average"), size = 0.75) +
+  labs(title = "Africa", y = "Growth Rate (%)", x = NULL) +
   theme_minimal()
 
 # Asia
 Asia_growth <- ggplot(subset(continent_growth, Continent == "Asia"), aes(x = Year)) +
   geom_line(aes(y = weighted_growth, color = "Weighted")) +
+  geom_point(aes(y = weighted_growth, color = "Weighted"), size = 0.75) +
   geom_line(aes(y = average_growth, color = "Average")) +
-  labs(title = "Oceania", y = "Growth Rate (%)", x=NULL) +
+  geom_point(aes(y = average_growth, color = "Average"), size = 0.75) +
+  labs(title = "Asia", y = "Growth Rate (%)", x = NULL) +
   theme_minimal()
 
 # Europe
 Europe_growth <- ggplot(subset(continent_growth, Continent == "Europe"), aes(x = Year)) +
   geom_line(aes(y = weighted_growth, color = "Weighted")) +
+  geom_point(aes(y = weighted_growth, color = "Weighted"), size = 0.75) +
   geom_line(aes(y = average_growth, color = "Average")) +
-  labs(title = "Oceania", y = "Growth Rate (%)", x=NULL) +
+  geom_point(aes(y = average_growth, color = "Average"), size = 0.75) +
+  labs(title = "Europe", y = "Growth Rate (%)", x = NULL) +
   theme_minimal()
 
 # North America
 NorthAmerica_growth <- ggplot(subset(continent_growth, Continent == "North America"), aes(x = Year)) +
   geom_line(aes(y = weighted_growth, color = "Weighted")) +
+  geom_point(aes(y = weighted_growth, color = "Weighted"), size = 0.75) +
   geom_line(aes(y = average_growth, color = "Average")) +
-  labs(title = "Oceania", y = "Growth Rate (%)", x=NULL) +
+  geom_point(aes(y = average_growth, color = "Average"), size = 0.75) +
+  labs(title = "North America", y = "Growth Rate (%)", x = NULL) +
   theme_minimal()
 
 # South America
-SouthAmerica_growth  <- ggplot(subset(continent_growth, Continent == "South America"), aes(x = Year)) +
+SouthAmerica_growth <- ggplot(subset(continent_growth, Continent == "South America"), aes(x = Year)) +
   geom_line(aes(y = weighted_growth, color = "Weighted")) +
+  geom_point(aes(y = weighted_growth, color = "Weighted"), size = 0.75) +
   geom_line(aes(y = average_growth, color = "Average")) +
-  labs(title = "Oceania", y = "Growth Rate (%)", x=NULL) +
+  geom_point(aes(y = average_growth, color = "Average"), size = 0.75) +
+  labs(title = "South America", y = "Growth Rate (%)", x = NULL) +
   theme_minimal()
 
 # Oceania
-Oceania_growth  <- ggplot(subset(continent_growth, Continent == "Oceania"), aes(x = Year)) +
+Oceania_growth <- ggplot(subset(continent_growth, Continent == "Oceania"), aes(x = Year)) +
   geom_line(aes(y = weighted_growth, color = "Weighted")) +
+  geom_point(aes(y = weighted_growth, color = "Weighted"), size = 0.75) +
   geom_line(aes(y = average_growth, color = "Average")) +
-  labs(title = "Oceania", y = "Growth Rate (%)", x=NULL) +
+  geom_point(aes(y = average_growth, color = "Average"), size = 0.75) +
+  labs(title = "Oceania", y = "Growth Rate (%)", x = NULL) +
   theme_minimal()
 
 # Combine all six with one shared legend
@@ -167,10 +180,11 @@ ldc_target_share <- GDP_Continent_Population_Combined %>%
 
 # Plot the share of LDC meeting target
 
-ggplot(ldc_target_share, aes(x = Year, y = share_meeting, color = Continent)) +
+LDCShare <- ggplot(ldc_target_share, aes(x = Year, y = share_meeting, color = Continent)) +
   geom_line(size = 0.5) +
+  geom_point(size=0.7) +
   labs(
-    title = "Share of LDCs Meeting the UN ≥7% GDP per Capita Growth Target",
+    title = "Share of LDCs Meeting the UN ≥7% GDP Growth Target by Continents",
     x = "Year",
     y = "% of LDCs meeting target",
     color = "Continent"
@@ -180,6 +194,49 @@ ggplot(ldc_target_share, aes(x = Year, y = share_meeting, color = Continent)) +
     legend.position = "bottom",
     plot.title = element_text(hjust = 0.5)   # center title
   )
+
+
+# Africa Statistical Analysis
+africa <- subset(ldc_target_share, Continent == "Africa")
+m_africa <- lm(share_meeting ~ Year, data = africa)
+africa_stats <- data.frame(
+  Continent = "Africa",
+  R2 = summary(m_africa)$r.squared,
+  p_value_Year = summary(m_africa)$coefficients["Year", "Pr(>|t|)"]
+)
+
+
+# Build a short label (rounded nicely)
+label_africa <- sprintf("R² = %.3f, p = %.3g", africa_stats$R2, africa_stats$p_value_Year)
+
+# Africa Best Fit plot with label
+
+LDCShare_Africa <- ldc_target_share %>%
+  filter(Continent == "Africa") %>%
+  ggplot(aes(x = Year, y = share_meeting)) +
+  geom_smooth(method = lm, se = FALSE, color = "red") +
+  geom_point(size = 0.7, colour = "red") +
+  annotate(
+    "text",
+    x = min(africa$Year, na.rm = TRUE) + 0.05 * diff(range(africa$Year, na.rm = TRUE)),
+    y = max(africa$share_meeting, na.rm = TRUE) * 0.95,
+    label = label_africa,
+    hjust = 0,
+    size = 4,
+    colour = "red"   # make the label red as well
+  ) +
+  labs(
+    title = "Share of Africa LDCs Meeting the UN ≥7% GDP Growth Target",
+    x = "Year",
+    y = "% of LDCs meeting target"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(hjust = 0.5)
+  )
+
+
+
 
 
 # The growth rate of LDC
@@ -222,7 +279,11 @@ Africa_LDC <- ggplot(subset(ldc_continent_growth, Continent == "Africa"), aes(x 
 
 # Asia
 
-Asia_LDC <- ggplot(subset(ldc_continent_growth, Continent == "Asia"), aes(x = Year)) +
+# Graph after 1995 because Maldive is included as LDC in 1995 which caused distortion
+ldc_continent_growth_Asia <- ldc_continent_growth %>%
+  filter(Continent == "Asia", Year %in% 1996:2021)
+
+Asia_LDC <- ggplot(ldc_continent_growth_Asia, aes(x = Year)) +
   geom_line(aes(y = weighted_growth_ldc, color = "Weighted"), linewidth = 1) +
   geom_point(aes(y = weighted_growth_ldc, color = "Weighted"), size = 1.5) +
   geom_line(aes(y = average_growth_ldc,  color = "Average"), linewidth = 1, linetype = "dashed") +
@@ -235,6 +296,8 @@ Asia_LDC <- ggplot(subset(ldc_continent_growth, Continent == "Asia"), aes(x = Ye
     panel.grid.minor = element_blank(),
     plot.title = element_text(hjust = 0.5)
   )
+
+# The sharp decline in 2020 was due to Maldives, having a -34% decline
 
 # Oceania
 
@@ -294,3 +357,7 @@ LDC_Distribution_Combined <- (Africa_box | Asia_box | Oceania_box) +
     title = "Distribution of Weighted LDC GDP per Capita Growth",
     theme = theme(plot.title = element_text(hjust = 0.5))
   )
+
+
+
+
