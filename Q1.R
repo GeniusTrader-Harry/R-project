@@ -70,6 +70,108 @@ GDP_Continent_Population_Combined <- GDP_Continent_Population_Combined %>%
   mutate(GDP_growth_rate = (GDP_Per_Capita - lag(GDP_Per_Capita)) / lag(GDP_Per_Capita) * 100) %>%
   ungroup()
 
+
+# Dtermine Fair growth Target
+
+# Europe
+europemean <- GDP_Continent_Population_Combined %>%
+  filter(Continent == "Europe") %>%
+  summarise(mean_gdp_pc = mean(GDP_Per_Capita, na.rm = TRUE))
+
+# Asia
+asiamean <- GDP_Continent_Population_Combined %>%
+  filter(Continent == "Asia") %>%
+  summarise(mean_gdp_pc = mean(GDP_Per_Capita, na.rm = TRUE))
+
+# Africa
+africamean <- GDP_Continent_Population_Combined %>%
+  filter(Continent == "Africa") %>%
+  summarise(mean_gdp_pc = mean(GDP_Per_Capita, na.rm = TRUE))
+
+# North America
+northamericamean <- GDP_Continent_Population_Combined %>%
+  filter(Continent == "North America") %>%
+  summarise(mean_gdp_pc = mean(GDP_Per_Capita, na.rm = TRUE))
+
+# South America
+southamericamean <- GDP_Continent_Population_Combined %>%
+  filter(Continent == "South America") %>%
+  summarise(mean_gdp_pc = mean(GDP_Per_Capita, na.rm = TRUE))
+
+# Oceania
+oceaniamean <- GDP_Continent_Population_Combined %>%
+  filter(Continent == "Oceania") %>%
+  summarise(mean_gdp_pc = mean(GDP_Per_Capita, na.rm = TRUE))
+
+
+
+# Combine your six means into one data frame
+means_df <- data.frame(
+  Continent = c("Europe", "Asia", "Africa", "North America", "South America", "Oceania"),
+  mean_gdp_pc = c(
+    europemean$mean_gdp_pc,
+    asiamean$mean_gdp_pc,
+    africamean$mean_gdp_pc,
+    northamericamean$mean_gdp_pc,
+    southamericamean$mean_gdp_pc,
+    oceaniamean$mean_gdp_pc
+  )
+)
+
+# Plot with legend
+TargetGrowth <- GDP_Continent_Population_Combined %>%
+  filter(GDP_growth_rate > -10, GDP_growth_rate < 10, GDP_Per_Capita < 60000) %>%
+  ggplot(aes(x = GDP_Per_Capita, y = GDP_growth_rate)) +
+  geom_point(alpha = 0.3, size = 0.5) +
+  geom_smooth(method = "lm", se = FALSE, color = "black") +
+  geom_vline(data = means_df,
+             aes(xintercept = mean_gdp_pc, color = Continent),
+             linetype = "dashed", size = 0.7) +
+  labs(title = "GDP per Capita vs GDP Growth Rate with Continent Means",
+       x = "GDP per Capita", y = "GDP Growth Rate (%)",
+       color = "Continent") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5),
+        legend.position = "bottom")
+
+# output
+
+
+# 1) Fit the linear model on your filtered data (same filters as your plot)
+plot_df <- GDP_Continent_Population_Combined %>%
+  filter(GDP_growth_rate > -10,
+         GDP_growth_rate < 10,
+         GDP_Per_Capita < 60000)
+
+m <- lm(GDP_growth_rate ~ GDP_Per_Capita, data = plot_df)
+
+# 2) Combine your six mean values
+means_df <- data.frame(
+  Continent    = c("Europe", "Asia", "Africa", "North America", "South America", "Oceania"),
+  mean_gdp_pc  = c(
+    europemean$mean_gdp_pc,
+    asiamean$mean_gdp_pc,
+    africamean$mean_gdp_pc,
+    northamericamean$mean_gdp_pc,
+    southamericamean$mean_gdp_pc,
+    oceaniamean$mean_gdp_pc
+  )
+)
+
+# 3) Predict growth at each mean GDP per capita (these are your 6 values)
+means_df$predicted_growth_at_mean <- predict(m, newdata = data.frame(GDP_Per_Capita = means_df$mean_gdp_pc))
+
+# 4) Output neatly (rounded)
+result <- means_df %>%
+  mutate(
+    mean_gdp_pc = round(mean_gdp_pc, 2),
+    predicted_growth_at_mean = round(predicted_growth_at_mean, 3)
+  )
+
+result
+
+
+
 # filter the years from 2009-2021
 GDP_Continent_Population_Combined <- GDP_Continent_Population_Combined %>%
   filter(Year >= 2009 & Year <= 2021)
