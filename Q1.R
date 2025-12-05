@@ -71,36 +71,42 @@ GDP_Continent_Population_Combined <- GDP_Continent_Population_Combined %>%
   ungroup()
 
 
-# Dtermine Fair growth Target
+# Determine Fair growth Target
 
 # Europe
 europemean <- GDP_Continent_Population_Combined %>%
   filter(Continent == "Europe") %>%
+  filter(Year >= 2009 & Year <= 2021) %>%
   summarise(mean_gdp_pc = mean(GDP_Per_Capita, na.rm = TRUE))
 
 # Asia
 asiamean <- GDP_Continent_Population_Combined %>%
   filter(Continent == "Asia") %>%
+  filter(Year >= 2009 & Year <= 2021) %>%
   summarise(mean_gdp_pc = mean(GDP_Per_Capita, na.rm = TRUE))
 
 # Africa
 africamean <- GDP_Continent_Population_Combined %>%
   filter(Continent == "Africa") %>%
+  filter(Year >= 2009 & Year <= 2021) %>%
   summarise(mean_gdp_pc = mean(GDP_Per_Capita, na.rm = TRUE))
 
 # North America
 northamericamean <- GDP_Continent_Population_Combined %>%
   filter(Continent == "North America") %>%
+  filter(Year >= 2009 & Year <= 2021) %>%
   summarise(mean_gdp_pc = mean(GDP_Per_Capita, na.rm = TRUE))
 
 # South America
 southamericamean <- GDP_Continent_Population_Combined %>%
   filter(Continent == "South America") %>%
+  filter(Year >= 2009 & Year <= 2021) %>%
   summarise(mean_gdp_pc = mean(GDP_Per_Capita, na.rm = TRUE))
 
 # Oceania
 oceaniamean <- GDP_Continent_Population_Combined %>%
   filter(Continent == "Oceania") %>%
+  filter(Year >= 2009 & Year <= 2021) %>%
   summarise(mean_gdp_pc = mean(GDP_Per_Capita, na.rm = TRUE))
 
 
@@ -118,7 +124,7 @@ means_df <- data.frame(
   )
 )
 
-# Plot with legend
+# Plot the line of best fit and average of each continent
 TargetGrowth <- GDP_Continent_Population_Combined %>%
   filter(GDP_growth_rate > -10, GDP_growth_rate < 10, GDP_Per_Capita < 60000) %>%
   ggplot(aes(x = GDP_Per_Capita, y = GDP_growth_rate)) +
@@ -137,7 +143,7 @@ TargetGrowth <- GDP_Continent_Population_Combined %>%
 # output
 
 
-# 1) Fit the linear model on your filtered data (same filters as your plot)
+# 1) Fit the linear model on your filtered data (same filters as plot)
 plot_df <- GDP_Continent_Population_Combined %>%
   filter(GDP_growth_rate > -10,
          GDP_growth_rate < 10,
@@ -207,59 +213,67 @@ na_counts <- GDP_Continent_Population_Combined %>%
 # Plotting the graph for Continents
 
 
-# Africa
+
+# Africa (threshold: 3%)
 Africa_growth <- ggplot(subset(continent_growth, Continent == "Africa"), aes(x = Year)) +
   geom_line(aes(y = weighted_growth, color = "Weighted")) +
   geom_point(aes(y = weighted_growth, color = "Weighted"), size = 0.75) +
   geom_line(aes(y = average_growth, color = "Average")) +
   geom_point(aes(y = average_growth, color = "Average"), size = 0.75) +
+  geom_hline(yintercept = 3, linetype = "dashed", color = "red", linewidth = 0.5) +
   labs(title = "Africa", y = "Growth Rate (%)", x = NULL) +
   theme_minimal()
 
-# Asia
+# Asia (threshold: 2%)
 Asia_growth <- ggplot(subset(continent_growth, Continent == "Asia"), aes(x = Year)) +
   geom_line(aes(y = weighted_growth, color = "Weighted")) +
   geom_point(aes(y = weighted_growth, color = "Weighted"), size = 0.75) +
   geom_line(aes(y = average_growth, color = "Average")) +
   geom_point(aes(y = average_growth, color = "Average"), size = 0.75) +
+  geom_hline(yintercept = 2, linetype = "dashed", color = "red", linewidth = 0.5) +
   labs(title = "Asia", y = "Growth Rate (%)", x = NULL) +
   theme_minimal()
 
-# Europe
+# Europe (threshold: 1.6%)
 Europe_growth <- ggplot(subset(continent_growth, Continent == "Europe"), aes(x = Year)) +
   geom_line(aes(y = weighted_growth, color = "Weighted")) +
   geom_point(aes(y = weighted_growth, color = "Weighted"), size = 0.75) +
   geom_line(aes(y = average_growth, color = "Average")) +
   geom_point(aes(y = average_growth, color = "Average"), size = 0.75) +
+  geom_hline(yintercept = 1.6, linetype = "dashed", color = "red", linewidth = 0.5) +
   labs(title = "Europe", y = "Growth Rate (%)", x = NULL) +
   theme_minimal()
 
-# North America
+# North America (threshold: 1.8%)
 NorthAmerica_growth <- ggplot(subset(continent_growth, Continent == "North America"), aes(x = Year)) +
   geom_line(aes(y = weighted_growth, color = "Weighted")) +
   geom_point(aes(y = weighted_growth, color = "Weighted"), size = 0.75) +
   geom_line(aes(y = average_growth, color = "Average")) +
   geom_point(aes(y = average_growth, color = "Average"), size = 0.75) +
+  geom_hline(yintercept = 1.8, linetype = "dashed", color = "red", linewidth = 0.5) +
   labs(title = "North America", y = "Growth Rate (%)", x = NULL) +
   theme_minimal()
 
-# South America
+# South America (threshold: 2%)
 SouthAmerica_growth <- ggplot(subset(continent_growth, Continent == "South America"), aes(x = Year)) +
   geom_line(aes(y = weighted_growth, color = "Weighted")) +
   geom_point(aes(y = weighted_growth, color = "Weighted"), size = 0.75) +
   geom_line(aes(y = average_growth, color = "Average")) +
   geom_point(aes(y = average_growth, color = "Average"), size = 0.75) +
+  geom_hline(yintercept = 2, linetype = "dashed", color = "red", linewidth = 0.5) +
   labs(title = "South America", y = "Growth Rate (%)", x = NULL) +
   theme_minimal()
 
-# Oceania
+# Oceania (threshold: 2%)
 Oceania_growth <- ggplot(subset(continent_growth, Continent == "Oceania"), aes(x = Year)) +
   geom_line(aes(y = weighted_growth, color = "Weighted")) +
   geom_point(aes(y = weighted_growth, color = "Weighted"), size = 0.75) +
   geom_line(aes(y = average_growth, color = "Average")) +
   geom_point(aes(y = average_growth, color = "Average"), size = 0.75) +
+  geom_hline(yintercept = 2, linetype = "dashed", color = "red", linewidth = 0.5) +
   labs(title = "Oceania", y = "Growth Rate (%)", x = NULL) +
   theme_minimal()
+
 
 # Combine all six with one shared legend
 Growth_Combined_Plot <- (Africa_growth | Asia_growth | Europe_growth) /
