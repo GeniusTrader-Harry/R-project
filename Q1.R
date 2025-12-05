@@ -71,7 +71,7 @@ GDP_Continent_Population_Combined <- GDP_Continent_Population_Combined %>%
   ungroup()
 
 
-# Dtermine Fair growth Target
+# Determine Fair growth Target
 
 # Europe
 europemean <- GDP_Continent_Population_Combined %>%
