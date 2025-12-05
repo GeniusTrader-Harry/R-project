@@ -4,7 +4,7 @@ library(ggplot2)
 library(purrr)
 library(patchwork)
 
-## Importing Data Sets
+# Importing Data Sets
 
 Continent_Classification <- read.csv("data sets/continents-according-to-our-world-in-data.csv")
 GDP_per_capita <- read.csv("data sets/gdp-per-capita-worldbank.csv")
@@ -434,6 +434,8 @@ LDC_Distribution_Combined <- (Africa_box | Asia_box | Oceania_box) +
     title = "Distribution of Weighted LDC GDP per Capita Growth",
     theme = theme(plot.title = element_text(hjust = 0.5))
   )
+
+
 
 
 
