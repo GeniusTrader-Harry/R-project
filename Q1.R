@@ -70,6 +70,10 @@ GDP_Continent_Population_Combined <- GDP_Continent_Population_Combined %>%
   mutate(GDP_growth_rate = (GDP_Per_Capita - lag(GDP_Per_Capita)) / lag(GDP_Per_Capita) * 100) %>%
   ungroup()
 
+# filter the years from 2009-2021
+GDP_Continent_Population_Combined <- GDP_Continent_Population_Combined %>%
+  filter(Year >= 2009 & Year <= 2021)
+
 
 # Compute Continent Growth
 
@@ -194,49 +198,6 @@ LDCShare <- ggplot(ldc_target_share, aes(x = Year, y = share_meeting, color = Co
     legend.position = "bottom",
     plot.title = element_text(hjust = 0.5)   # center title
   )
-
-
-# Africa Statistical Analysis
-africa <- subset(ldc_target_share, Continent == "Africa")
-m_africa <- lm(share_meeting ~ Year, data = africa)
-africa_stats <- data.frame(
-  Continent = "Africa",
-  R2 = summary(m_africa)$r.squared,
-  p_value_Year = summary(m_africa)$coefficients["Year", "Pr(>|t|)"]
-)
-
-
-# Build a short label (rounded nicely)
-label_africa <- sprintf("R² = %.3f, p = %.3g", africa_stats$R2, africa_stats$p_value_Year)
-
-# Africa Best Fit plot with label
-
-LDCShare_Africa <- ldc_target_share %>%
-  filter(Continent == "Africa") %>%
-  ggplot(aes(x = Year, y = share_meeting)) +
-  geom_smooth(method = lm, se = FALSE, color = "red") +
-  geom_point(size = 0.7, colour = "red") +
-  annotate(
-    "text",
-    x = min(africa$Year, na.rm = TRUE) + 0.05 * diff(range(africa$Year, na.rm = TRUE)),
-    y = max(africa$share_meeting, na.rm = TRUE) * 0.95,
-    label = label_africa,
-    hjust = 0,
-    size = 4,
-    colour = "red"   # make the label red as well
-  ) +
-  labs(
-    title = "Share of Africa LDCs Meeting the UN ≥7% GDP Growth Target",
-    x = "Year",
-    y = "% of LDCs meeting target"
-  ) +
-  theme_minimal(base_size = 12) +
-  theme(
-    plot.title = element_text(hjust = 0.5)
-  )
-
-
-
 
 
 # The growth rate of LDC
