@@ -436,6 +436,113 @@ LDC_Distribution_Combined <- (Africa_box | Asia_box | Oceania_box) +
   )
 
 
+# Compare Caribbean with rest
+
+GDP_Continent_Population_Combined_NorthAmerica <- GDP_Continent_Population_Combined %>%
+  filter(Continent == "North America")
+
+# Vector of Caribbean codes
+
+caribbean <- c("ATG","BHS","BRB","CUB","DMA","DOM","GRD","HTI","JAM","KNA","LCA","VCT","TTO")
+
+# Two region weighted growth rate
+CaribbeanNorthAmerica <-GDP_Continent_Population_Combined_NorthAmerica %>%
+  mutate(Group = if_else(Code %in% caribbean, "Caribbean", "Rest of North America")) %>%
+  group_by(Year, Group) %>%
+  summarise(
+    weighted_gdp_pc = sum(GDP_Per_Capita * Population, na.rm = TRUE) / 
+      sum(Population, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(Group, Year) %>%
+  group_by(Group) %>%
+  mutate(
+    weighted_growth = (weighted_gdp_pc / lag(weighted_gdp_pc) - 1) * 100,
+  ) %>%
+  ungroup()
+
+# Plot the graph of the two region
+
+CaribbeanNorthAmericaGraph <- ggplot(CaribbeanNorthAmerica, aes(x = Year, y = weighted_growth, color = Group)) +
+  geom_line(size = 0.75) +
+  geom_point(size = 1.5, alpha = 0.8) +
+  scale_color_manual(values = c("Caribbean" = "#D62728",  # red
+                                "Rest of North America" = "#7F7F7F")) +  # grey
+  labs(
+    title = "Caribbean vs Rest of North America",
+    x = "Year",
+    y = "GDP per capita growth (%)",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(hjust = 0.5),
+    plot.subtitle = element_text(hjust = 0.5)
+  )
+
+
+
+
+# Africa Diversify vs Dependent
+
+
+# Diversified economies 
+diversified_codes <- c(
+  "BWA","CPV","DJI","EGY","SWZ","GHA","KEN","MUS","MAR","NAM",
+  "RWA","SEN","SYC","ZAF","TZA","TUN"
+)
+
+# Commodity-dependent economies 
+commodity_codes <- c(
+  "DZA","AGO","BEN","BFA","BDI","CMR","CAF","TCD","COM","COG","CIV","COD",
+  "GNQ","ETH","GAB","GMB","GIN","GNB","LSO","LBR","LBY","MDG","MWI","MLI",
+  "MRT","MOZ","NER","NGA","STP","SLE","SOM","SDN","TGO","UGA","ZMB","ZWE"
+)
+
+
+# Classify each country into Diversified vs Commodity-dependent
+DiversifiedCommodity <- GDP_Continent_Population_Combined %>%
+  mutate(Group = case_when(
+    Code %in% diversified_codes ~ "Diversified",
+    Code %in% commodity_codes   ~ "Commodity-dependent",
+    TRUE                        ~ NA_character_   # drop unclassified
+  )) %>%
+  filter(!is.na(Group)) %>%
+  group_by(Year, Group) %>%
+  summarise(
+    weighted_gdp_pc = sum(GDP_Per_Capita * Population, na.rm = TRUE) / 
+      sum(Population, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(Group, Year) %>%
+  group_by(Group) %>%
+  mutate(
+    weighted_growth = (weighted_gdp_pc / lag(weighted_gdp_pc) - 1) * 100
+  ) %>%
+  ungroup()
+
+
+# Plot the graph
+DiversifiedCommodityGraph <- ggplot(DiversifiedCommodity, 
+                                    aes(x = Year, y = weighted_growth, color = Group)) +
+  geom_line(size = 0.75) +
+  geom_point(size = 1.5, alpha = 0.8) +
+  scale_color_manual(values = c("Diversified" = "#1f77b4", "Commodity-dependent" = "#D62728")) +
+  labs(
+    title = "Diversified vs Commodity-dependent",
+    x = "Year",
+    y = "GDP per capita growth (%)",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(hjust = 0.5)
+  )
+
+# Print the graph
+DiversifiedCommodityGraph
 
 
 
