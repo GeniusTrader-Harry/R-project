@@ -590,8 +590,51 @@ HaitiNorthAmericaPlot <- ggplot(HaitiNorthAmerica, aes(x = Year, y = weighted_gr
            label = "7% target", hjust = -0.1, vjust = -0.5, size = 3.2, color = "black")
 
 
+# Compare New Zeland & Australia vs Rest of Pacific Islands
+
+# Restrict to Oceania
+GDP_Continent_Population_Combined_Oceania <- GDP_Continent_Population_Combined %>%
+  filter(Continent == "Oceania")
+
+# Vector for AU & NZ (ISO Alpha-3)
+anz_codes <- c("AUS", "NZL")
+
+# Two-region weighted growth rate (same structure as your Caribbean code)
+Oceania_ANZ_vs_Rest <- GDP_Continent_Population_Combined_Oceania %>%
+  mutate(Group = if_else(Code %in% anz_codes, "Australia & New Zealand", "Rest of Pacific Islands")) %>%
+  group_by(Year, Group) %>%
+  summarise(
+    weighted_gdp_pc = sum(GDP_Per_Capita * Population, na.rm = TRUE) / 
+      sum(Population, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(Group, Year) %>%
+  group_by(Group) %>%
+  mutate(
+    weighted_growth = (weighted_gdp_pc / lag(weighted_gdp_pc) - 1) * 100
+  ) %>%
+  ungroup()
 
 
+Oceania_ANZ_vs_Rest_Graph <- ggplot(Oceania_ANZ_vs_Rest, aes(x = Year, y = weighted_growth, color = Group)) +
+  geom_line(size = 0.75) +
+  geom_point(size = 1.5, alpha = 0.85) +
+  scale_color_manual(values = c("Australia & New Zealand" = "#1f77b4",       # blue
+                                "Rest of Pacific Islands" = "#D62728")) +    # red
+  labs(
+    title = "Australia & New Zealand vs Rest of Pacific Islands",
+    x = "Year",
+    y = "GDP per capita growth (%)",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(hjust = 0.5)
+  )
+
+# Print
+Oceania_ANZ_vs_Rest_Graph
 
 
 
