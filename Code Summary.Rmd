@@ -1,27 +1,49 @@
+---
+title: "Code Summary"
+author: "Group C9"
+date: "2025-12-08"
+output:
+  pdf_document:
+    latex_engine: xelatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, results = 'hide', fig.show = 'hide')
+```
+
+## Load Libraries
+
+```{r libraries}
 library(tidyverse)
 library(dplyr)
 library(ggplot2)
 library(purrr)
 library(patchwork)
+```
 
-# Importing Data Sets
+## Import Data Sets
 
+```{r import-data}
 Continent_Classification <- read.csv("data sets/continents-according-to-our-world-in-data.csv")
 GDP_per_capita <- read.csv("data sets/gdp-per-capita-worldbank.csv")
 LDC <- read.csv("data sets/LDC.csv")
 World_Population <- read.csv("data sets/world population.csv")
 NEET <- read.csv("data sets/youth-not-in-education-employment-training.csv")
+```
 
+## Data Preprocessing
 
-# Rename Columns
+### Rename Columns
 
+```{r rename-columns}
 colnames(GDP_per_capita) <- c("Country", "Code", "Year", "GDP_Per_Capita")
 colnames(Continent_Classification) <- c("Country", "Code", "Year", "Continent")
 colnames(World_Population) <- c("Country", "Code", "Year", "Population")
+```
 
+### Convert Columns to Correct Types
 
-# Convert columns to correct types
-
+```{r convert-types}
 GDP_per_capita <- GDP_per_capita %>%
   mutate(
     Country = as.character(Country),
@@ -45,34 +67,41 @@ World_Population <- World_Population %>%
     Year = as.integer(Year),
     Population = as.numeric(Population)
   )
+```
 
-# Combine Data Sets
+### Combine Data Sets
 
+```{r combine-data}
 GDP_Continent_Population_Combined <- GDP_per_capita %>%
   left_join(Continent_Classification %>% select(Code, Continent), by = "Code") %>%
   left_join(World_Population %>% select(Code, Year, Population), by = c("Code", "Year"))
 
-
 GDP_Continent_Population_Combined <- GDP_Continent_Population_Combined %>%
   drop_na()
+```
 
+### Add LDC Classification
 
-# LDC Classification
-
+```{r ldc-classification}
 GDP_Continent_Population_Combined <- GDP_Continent_Population_Combined %>%
   mutate(LDC_Status = Country %in% LDC$Country & Year %in% LDC$Year)
+```
 
-# Add growth rate
+### Calculate Growth Rate
 
+```{r growth-rate}
 GDP_Continent_Population_Combined <- GDP_Continent_Population_Combined %>%
   arrange(Country, Year) %>%  
   group_by(Country) %>%
   mutate(GDP_growth_rate = (GDP_Per_Capita - lag(GDP_Per_Capita)) / lag(GDP_Per_Capita) * 100) %>%
   ungroup()
+```
 
+## Determine Fair Growth Target
 
-# Determine Fair growth Target
+### Calculate Mean GDP per Capita by Continent (2009-2021)
 
+```{r continent-means}
 # Europe
 europemean <- GDP_Continent_Population_Combined %>%
   filter(Continent == "Europe") %>%
@@ -109,9 +138,7 @@ oceaniamean <- GDP_Continent_Population_Combined %>%
   filter(Year >= 2009 & Year <= 2021) %>%
   summarise(mean_gdp_pc = mean(GDP_Per_Capita, na.rm = TRUE))
 
-
-
-# Combine your six means into one data frame
+# Combine means into one data frame
 means_df <- data.frame(
   Continent = c("Europe", "Asia", "Africa", "North America", "South America", "Oceania"),
   mean_gdp_pc = c(
@@ -123,8 +150,11 @@ means_df <- data.frame(
     oceaniamean$mean_gdp_pc
   )
 )
+```
 
-# Plot the line of best fit and average of each continent
+### Plot GDP per Capita vs Growth Rate with Continent Means
+
+```{r target-growth-plot, fig.width=10, fig.height=6}
 TargetGrowth <- GDP_Continent_Population_Combined %>%
   filter(GDP_growth_rate > -10, GDP_growth_rate < 10, GDP_Per_Capita < 60000) %>%
   ggplot(aes(x = GDP_Per_Capita, y = GDP_growth_rate)) +
@@ -140,10 +170,13 @@ TargetGrowth <- GDP_Continent_Population_Combined %>%
   theme(plot.title = element_text(hjust = 0.5),
         legend.position = "bottom")
 
-# output
+TargetGrowth
+```
 
+### Predict Growth at Mean GDP per Capita
 
-# 1) Fit the linear model on your filtered data (same filters as plot)
+```{r predict-growth}
+# Fit linear model on filtered data
 plot_df <- GDP_Continent_Population_Combined %>%
   filter(GDP_growth_rate > -10,
          GDP_growth_rate < 10,
@@ -151,54 +184,48 @@ plot_df <- GDP_Continent_Population_Combined %>%
 
 m <- lm(GDP_growth_rate ~ GDP_Per_Capita, data = plot_df)
 
-# 2) Combine your six mean values
-means_df <- data.frame(
-  Continent    = c("Europe", "Asia", "Africa", "North America", "South America", "Oceania"),
-  mean_gdp_pc  = c(
-    europemean$mean_gdp_pc,
-    asiamean$mean_gdp_pc,
-    africamean$mean_gdp_pc,
-    northamericamean$mean_gdp_pc,
-    southamericamean$mean_gdp_pc,
-    oceaniamean$mean_gdp_pc
-  )
-)
-
-# 3) Predict growth at each mean GDP per capita (these are your 6 values)
+# Predict growth at each mean GDP per capita
 means_df$predicted_growth_at_mean <- predict(m, newdata = data.frame(GDP_Per_Capita = means_df$mean_gdp_pc))
 
-# 4) Output neatly (rounded)
+# Output results
 result <- means_df %>%
   mutate(
     mean_gdp_pc = round(mean_gdp_pc, 2),
     predicted_growth_at_mean = round(predicted_growth_at_mean, 3)
   )
 
+print(result)
+```
 
+### Filter Years 2009-2021
 
-
-# filter the years from 2009-2021
+```{r filter-years}
 GDP_Continent_Population_Combined <- GDP_Continent_Population_Combined %>%
   filter(Year >= 2009 & Year <= 2021)
+```
 
+## Continent Growth Analysis
 
-# Compute Continent Growth
+### Compute Continent Growth Rates
 
+```{r continent-growth}
 continent_growth <- GDP_Continent_Population_Combined %>%
   group_by(Continent, Year) %>%
   summarise(
-    weighted_gdp_pc = sum(GDP_Per_Capita * Population, na.rm = TRUE) / sum(Population, na.rm = TRUE), # weighted gdp_pc
-    average_gdp_pc  = mean(GDP_Per_Capita, na.rm = TRUE),  # average gdp_pc
+    weighted_gdp_pc = sum(GDP_Per_Capita * Population, na.rm = TRUE) / sum(Population, na.rm = TRUE),
+    average_gdp_pc  = mean(GDP_Per_Capita, na.rm = TRUE),
     .groups = "drop"
   ) %>%
   arrange(Continent, Year) %>%
   group_by(Continent) %>%
-  mutate(weighted_growth = (weighted_gdp_pc / lag(weighted_gdp_pc) - 1) * 100) %>% # growth rate weighted by population
-  mutate(average_growth = (average_gdp_pc / lag(average_gdp_pc) - 1) * 100) %>% # Average growth rate
+  mutate(weighted_growth = (weighted_gdp_pc / lag(weighted_gdp_pc) - 1) * 100) %>%
+  mutate(average_growth = (average_gdp_pc / lag(average_gdp_pc) - 1) * 100) %>%
   ungroup()
+```
 
+### Check NA Counts
 
-# NA during the years will affect accuracy of gdp growth rate
+```{r na-counts}
 na_counts <- GDP_Continent_Population_Combined %>%
   group_by(Continent, Year) %>%
   summarise(
@@ -206,13 +233,11 @@ na_counts <- GDP_Continent_Population_Combined %>%
     .groups = "drop"
   ) %>%
   arrange(Continent, Year)
-# Europe in 1995 is unreliable because 8 country have NA growth rate
+```
 
+### Plot Growth by Continent
 
-# Plotting the graph for Continents
-
-
-
+```{r continent-growth-plots, fig.width=12, fig.height=8}
 # Africa (threshold: 3%)
 Africa_growth <- ggplot(subset(continent_growth, Continent == "Africa"), aes(x = Year)) +
   geom_line(aes(y = weighted_growth, color = "Weighted")) +
@@ -273,7 +298,6 @@ Oceania_growth <- ggplot(subset(continent_growth, Continent == "Oceania"), aes(x
   labs(title = "Oceania", y = "Growth Rate (%)", x = NULL) +
   theme_minimal()
 
-
 # Combine all six with one shared legend
 Growth_Combined_Plot <- (Africa_growth | Asia_growth | Europe_growth) /
   (NorthAmerica_growth | SouthAmerica_growth | Oceania_growth) +
@@ -282,23 +306,26 @@ Growth_Combined_Plot <- (Africa_growth | Asia_growth | Europe_growth) /
   plot_layout(guides = "collect") &
   theme(legend.position = "bottom")
 
+Growth_Combined_Plot
+```
 
+## LDC Analysis
 
+### Share of LDCs Meeting the 7% Target
 
-# Share of LDC meeting the 7% target every year
-
+```{r ldc-target-share}
 ldc_target_share <- GDP_Continent_Population_Combined %>%
-  filter(LDC_Status) %>%                                   # keep only LDCs
+  filter(LDC_Status) %>%
   group_by(Continent, Year) %>%
   summarise(
-    n_ldc         = n_distinct(Country),                   # LDC count observed
+    n_ldc         = n_distinct(Country),
     n_meet        = n_distinct(Country[GDP_growth_rate >= 7]),
-    share_meeting = if_else(n_ldc > 0, 100 * n_meet / n_ldc, NA_real_), # percent
+    share_meeting = if_else(n_ldc > 0, 100 * n_meet / n_ldc, NA_real_),
     .groups = "drop"
   )
+```
 
-# Plot the share of LDC meeting target
-
+```{r ldc-share-plot, fig.width=10, fig.height=6}
 LDCShare <- ggplot(ldc_target_share, aes(x = Year, y = share_meeting, color = Continent)) +
   geom_line(size = 0.5) +
   geom_point(size=0.7) +
@@ -311,15 +338,15 @@ LDCShare <- ggplot(ldc_target_share, aes(x = Year, y = share_meeting, color = Co
   theme_minimal(base_size = 12) +
   theme(
     legend.position = "bottom",
-    plot.title = element_text(hjust = 0.5)   # center title
+    plot.title = element_text(hjust = 0.5)
   )
 
+LDCShare
+```
 
-# The growth rate of LDC
+### LDC GDP per Capita Growth
 
-
-# LDC GDP per capita growth (weighted vs average) by continent-year
-
+```{r ldc-continent-growth}
 ldc_continent_growth <- GDP_Continent_Population_Combined %>%
   filter(LDC_Status) %>%
   group_by(Continent, Year) %>%
@@ -336,9 +363,10 @@ ldc_continent_growth <- GDP_Continent_Population_Combined %>%
     average_growth_ldc  = (average_gdp_pc_ldc  / lag(average_gdp_pc_ldc)  - 1) * 100
   ) %>%
   ungroup()
+```
 
+```{r ldc-growth-plots, fig.width=12, fig.height=4}
 # Africa
-
 Africa_LDC <- ggplot(subset(ldc_continent_growth, Continent == "Africa"), aes(x = Year)) +
   geom_line(aes(y = weighted_growth_ldc, color = "Weighted"), linewidth = 1) +
   geom_point(aes(y = weighted_growth_ldc, color = "Weighted"), size = 1.5) +
@@ -353,9 +381,7 @@ Africa_LDC <- ggplot(subset(ldc_continent_growth, Continent == "Africa"), aes(x 
     plot.title = element_text(hjust = 0.5)
   )
 
-# Asia
-
-# Graph after 1995 because Maldive is included as LDC in 1995 which caused distortion
+# Asia (filtered after 1995 due to Maldives distortion)
 ldc_continent_growth_Asia <- ldc_continent_growth %>%
   filter(Continent == "Asia", Year %in% 1996:2021)
 
@@ -373,10 +399,7 @@ Asia_LDC <- ggplot(ldc_continent_growth_Asia, aes(x = Year)) +
     plot.title = element_text(hjust = 0.5)
   )
 
-# The sharp decline in 2020 was due to Maldives, having a -34% decline
-
 # Oceania
-
 Oceania_LDC <- ggplot(subset(ldc_continent_growth, Continent == "Oceania"), aes(x = Year)) +
   geom_line(aes(y = weighted_growth_ldc, color = "Weighted"), linewidth = 1) +
   geom_point(aes(y = weighted_growth_ldc, color = "Weighted"), size = 1.5) +
@@ -391,10 +414,16 @@ Oceania_LDC <- ggplot(subset(ldc_continent_growth, Continent == "Oceania"), aes(
     plot.title = element_text(hjust = 0.5)
   )
 
+# Display plots
+Africa_LDC
+Asia_LDC
+Oceania_LDC
+```
 
-# Box Plot to Show Distribution
+### Distribution of LDC Growth
 
-# Common y-limits across the three continents (ignoring NAs)
+```{r ldc-distribution, fig.width=12, fig.height=5}
+# Common y-limits across the three continents
 ylim_range <- ldc_continent_growth %>%
   filter(Continent %in% c("Africa", "Asia", "Oceania")) %>%
   pull(weighted_growth_ldc) %>%
@@ -434,18 +463,22 @@ LDC_Distribution_Combined <- (Africa_box | Asia_box | Oceania_box) +
     theme = theme(plot.title = element_text(hjust = 0.5))
   )
 
+LDC_Distribution_Combined
+```
 
-# Compare Caribbean with rest
+## Regional Comparisons
 
+### Caribbean vs Rest of North America
+
+```{r caribbean-analysis}
 GDP_Continent_Population_Combined_NorthAmerica <- GDP_Continent_Population_Combined %>%
   filter(Continent == "North America")
 
 # Vector of Caribbean codes
-
 caribbean <- c("ATG","BHS","BRB","CUB","DMA","DOM","GRD","HTI","JAM","KNA","LCA","VCT","TTO")
 
 # Two region weighted growth rate
-CaribbeanNorthAmerica <-GDP_Continent_Population_Combined_NorthAmerica %>%
+CaribbeanNorthAmerica <- GDP_Continent_Population_Combined_NorthAmerica %>%
   mutate(Group = if_else(Code %in% caribbean, "Caribbean", "Rest of North America")) %>%
   group_by(Year, Group) %>%
   summarise(
@@ -459,14 +492,13 @@ CaribbeanNorthAmerica <-GDP_Continent_Population_Combined_NorthAmerica %>%
     weighted_growth = (weighted_gdp_pc / lag(weighted_gdp_pc) - 1) * 100,
   ) %>%
   ungroup()
+```
 
-# Plot the graph of the two region
-
+```{r caribbean-plot, fig.width=10, fig.height=6}
 CaribbeanNorthAmericaGraph <- ggplot(CaribbeanNorthAmerica, aes(x = Year, y = weighted_growth, color = Group)) +
   geom_line(size = 0.75) +
   geom_point(size = 1.5, alpha = 0.8) +
-  scale_color_manual(values = c("Caribbean" = "#D62728",  # red
-                                "Rest of North America" = "#7F7F7F")) +  # grey
+  scale_color_manual(values = c("Caribbean" = "#D62728", "Rest of North America" = "#7F7F7F")) +
   labs(
     title = "Caribbean vs Rest of North America",
     x = "Year",
@@ -480,12 +512,12 @@ CaribbeanNorthAmericaGraph <- ggplot(CaribbeanNorthAmerica, aes(x = Year, y = we
     plot.subtitle = element_text(hjust = 0.5)
   )
 
+CaribbeanNorthAmericaGraph
+```
 
+### Africa: Diversified vs Commodity-Dependent Economies
 
-
-# Africa Diversify vs Dependent
-
-
+```{r africa-diversified}
 # Diversified economies 
 diversified_codes <- c(
   "BWA","CPV","DJI","EGY","SWZ","GHA","KEN","MUS","MAR","NAM",
@@ -499,13 +531,12 @@ commodity_codes <- c(
   "MRT","MOZ","NER","NGA","STP","SLE","SOM","SDN","TGO","UGA","ZMB","ZWE"
 )
 
-
-# Classify each country into Diversified vs Commodity-dependent
+# Classify each country
 DiversifiedCommodity <- GDP_Continent_Population_Combined %>%
   mutate(Group = case_when(
     Code %in% diversified_codes ~ "Diversified",
     Code %in% commodity_codes   ~ "Commodity-dependent",
-    TRUE                        ~ NA_character_   # drop unclassified
+    TRUE                        ~ NA_character_
   )) %>%
   filter(!is.na(Group)) %>%
   group_by(Year, Group) %>%
@@ -520,9 +551,9 @@ DiversifiedCommodity <- GDP_Continent_Population_Combined %>%
     weighted_growth = (weighted_gdp_pc / lag(weighted_gdp_pc) - 1) * 100
   ) %>%
   ungroup()
+```
 
-
-# Plot the graph
+```{r diversified-plot, fig.width=10, fig.height=6}
 DiversifiedCommodityGraph <- ggplot(DiversifiedCommodity, 
                                     aes(x = Year, y = weighted_growth, color = Group)) +
   geom_line(size = 0.75) +
@@ -540,22 +571,24 @@ DiversifiedCommodityGraph <- ggplot(DiversifiedCommodity,
     plot.title = element_text(hjust = 0.5)
   )
 
+DiversifiedCommodityGraph
+```
 
-# Haiti VS North America
+### Haiti vs North America
 
-
-# 1) Compute Haiti's GDP per capita growth series
+```{r haiti-analysis}
+# Haiti's GDP per capita growth series
 haiti_growth <- GDP_Continent_Population_Combined %>%
   filter(Code == "HTI") %>%
   arrange(Year) %>%
   group_by(Country) %>%
-  mutate(weighted_gdp_pc = GDP_Per_Capita,  # for a single country, "weighted" level is just its level
+  mutate(weighted_gdp_pc = GDP_Per_Capita,
          weighted_growth  = (weighted_gdp_pc / lag(weighted_gdp_pc) - 1) * 100) %>%
   ungroup() %>%
   select(Year, Country, weighted_growth) %>%
   mutate(Group = "Haiti")
 
-# 2) Compute North America's population-weighted GDP per capita, then YoY growth
+# North America's population-weighted GDP per capita growth
 na_growth <- GDP_Continent_Population_Combined %>%
   filter(Continent == "North America") %>%
   group_by(Year) %>%
@@ -569,12 +602,14 @@ na_growth <- GDP_Continent_Population_Combined %>%
          Group = "North America (weighted avg)") %>%
   select(Year, Group, weighted_growth)
 
-# 3) Combine and plot (remove initial NA from lag)
+# Combine
 HaitiNorthAmerica <- haiti_growth %>%
   select(Year, Group, weighted_growth) %>%
   bind_rows(na_growth) %>%
   filter(!is.na(weighted_growth))
+```
 
+```{r haiti-plot, fig.width=10, fig.height=6}
 HaitiNorthAmericaPlot <- ggplot(HaitiNorthAmerica, aes(x = Year, y = weighted_growth, color = Group)) +
   geom_line(size = 0.75) +
   geom_point(size = 1.5, alpha = 0.9) +
@@ -588,10 +623,4 @@ HaitiNorthAmericaPlot <- ggplot(HaitiNorthAmerica, aes(x = Year, y = weighted_gr
         plot.title = element_text(hjust = 0.5)) + 
   annotate("text", x = min(HaitiNorthAmerica$Year, na.rm = TRUE), y = 7,
            label = "7% target", hjust = -0.1, vjust = -0.5, size = 3.2, color = "black")
-
-
-
-
-
-
-
+```
