@@ -1,25 +1,27 @@
 library(tidyverse)
 library(ggplot2)
 library(dplyr)
-setwd("C:/Users/User/Downloads")
 
-youth_NEET <- read.csv("youth-not-in-education-employment-training.csv")
-continents <- read.csv("continents-according-to-our-world-in-data.csv")
+# Load data
 
-#tidy columns
+youth_NEET <- read.csv("data sets/youth-not-in-education-employment-training.csv")
+continents <- read.csv("data sets/continents-according-to-our-world-in-data.csv")
+
+# Tidy columns
 youth_NEET_continent_1 <- inner_join(youth_NEET, continents, by = "Entity")
 youth_NEET_continent <- youth_NEET_continent_1 %>% select(-Code.y, -Year.y)
 
-#rename
+# Rename columns
 youth_NEET_continent <- youth_NEET_continent %>% 
   rename(NEET = Share.of.youth.not.in.education..employment.or.training..total....of.youth.population. , Year = Year.x)
 
-#calculate mean
+# Calculate mean
+
 mean_NEET_continents <- youth_NEET_continent %>% 
   group_by(Continent, Year) %>% 
   summarise(mean_NEET = mean(NEET, na.rm = TRUE))
 
-#plotting
+# Plotting
 mean_NEET_continents %>%
   filter(Year >= 2010, Year <= 2020) %>%
   ggplot(aes(x = Year, y = mean_NEET, colour = Continent)) + 
