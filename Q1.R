@@ -288,10 +288,10 @@ Growth_Combined_Plot <- (Africa_growth | Asia_growth | Europe_growth) /
 # Share of LDC meeting the 7% target every year
 
 ldc_target_share <- GDP_Continent_Population_Combined %>%
-  filter(LDC_Status) %>%                                   # keep only LDCs
+  filter(LDC_Status) %>% # keep only LDCs
   group_by(Continent, Year) %>%
   summarise(
-    n_ldc         = n_distinct(Country),                   # LDC count observed
+    n_ldc         = n_distinct(Country), # LDC count observed
     n_meet        = n_distinct(Country[GDP_growth_rate >= 7]),
     share_meeting = if_else(n_ldc > 0, 100 * n_meet / n_ldc, NA_real_), # percent
     .groups = "drop"
@@ -465,8 +465,8 @@ CaribbeanNorthAmerica <-GDP_Continent_Population_Combined_NorthAmerica %>%
 CaribbeanNorthAmericaGraph <- ggplot(CaribbeanNorthAmerica, aes(x = Year, y = weighted_growth, color = Group)) +
   geom_line(size = 0.75) +
   geom_point(size = 1.5, alpha = 0.8) +
-  scale_color_manual(values = c("Caribbean" = "#D62728",  # red
-                                "Rest of North America" = "#7F7F7F")) +  # grey
+  scale_color_manual(values = c("Caribbean" = "#D62728",
+                                "Rest of North America" = "#7F7F7F")) +
   labs(
     title = "Caribbean vs Rest of North America",
     x = "Year",
@@ -544,18 +544,18 @@ DiversifiedCommodityGraph <- ggplot(DiversifiedCommodity,
 # Haiti VS North America
 
 
-# 1) Compute Haiti's GDP per capita growth series
+# Compute Haiti's GDP per capita growth series
 haiti_growth <- GDP_Continent_Population_Combined %>%
   filter(Code == "HTI") %>%
   arrange(Year) %>%
   group_by(Country) %>%
-  mutate(weighted_gdp_pc = GDP_Per_Capita,  # for a single country, "weighted" level is just its level
+  mutate(weighted_gdp_pc = GDP_Per_Capita,
          weighted_growth  = (weighted_gdp_pc / lag(weighted_gdp_pc) - 1) * 100) %>%
   ungroup() %>%
   select(Year, Country, weighted_growth) %>%
   mutate(Group = "Haiti")
 
-# 2) Compute North America's population-weighted GDP per capita, then YoY growth
+# Compute North America's population-weighted GDP per capita, then YoY growth
 na_growth <- GDP_Continent_Population_Combined %>%
   filter(Continent == "North America") %>%
   group_by(Year) %>%
@@ -569,7 +569,7 @@ na_growth <- GDP_Continent_Population_Combined %>%
          Group = "North America (weighted avg)") %>%
   select(Year, Group, weighted_growth)
 
-# 3) Combine and plot (remove initial NA from lag)
+# Combine and plot (remove initial NA from lag)
 HaitiNorthAmerica <- haiti_growth %>%
   select(Year, Group, weighted_growth) %>%
   bind_rows(na_growth) %>%
@@ -619,8 +619,8 @@ Oceania_ANZ_vs_Rest <- GDP_Continent_Population_Combined_Oceania %>%
 Oceania_ANZ_vs_Rest_Graph <- ggplot(Oceania_ANZ_vs_Rest, aes(x = Year, y = weighted_growth, color = Group)) +
   geom_line(size = 0.75) +
   geom_point(size = 1.5, alpha = 0.85) +
-  scale_color_manual(values = c("Australia & New Zealand" = "#1f77b4",       # blue
-                                "Rest of Pacific Islands" = "#D62728")) +    # red
+  scale_color_manual(values = c("Australia & New Zealand" = "#1f77b4",
+                                "Rest of Pacific Islands" = "#D62728")) +
   labs(
     title = "Australia & New Zealand vs Rest of Pacific Islands",
     x = "Year",
@@ -633,8 +633,6 @@ Oceania_ANZ_vs_Rest_Graph <- ggplot(Oceania_ANZ_vs_Rest, aes(x = Year, y = weigh
     plot.title = element_text(hjust = 0.5)
   )
 
-# Print
-Oceania_ANZ_vs_Rest_Graph
 
 
 
